@@ -1,0 +1,22 @@
+---
+# tasks file for colorrc
+- name: ghq root
+  shell: "{{ghq_executable}} root"
+  register: ghq_root
+  changed_when: false
+- name: Clone .colorrc repository
+  ghq:
+    name: "{{remote_repository_path}}"
+    executable: "{{ghq_executable}}"
+- name: Check ~/.colorrc
+  stat:
+    path: "{{ansible_env.HOME}}/.colorrc"
+  register: st
+- name: Back up ~/.colorrc
+  shell: "mv {{ansible_env.HOME}}/.colorrc {{ansible_env.HOME}}/.colorrc.{{ansible_date_time.date}}-{{ansible_date_time.hour}}-{{ansible_date_time.minute}}-{{ansible_date_time.second}}"
+  when: st.stat.exists and not st.stat.islnk
+- name: Make symbolic links
+  file:
+    src: "{{ghq_root.stdout}}/github.com/{{remote_repository_path}}/.colorrc"
+    dest: "{{ansible_env.HOME}}/.colorrc"
+    state: link
